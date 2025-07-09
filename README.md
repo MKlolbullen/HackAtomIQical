@@ -9,7 +9,14 @@
 
 **Professional Bug Bounty Hunting & Penetration Testing Platform**
 
-*Inspired by Trickest.io with 150+ security tools and visual workflow builder*
+*Inspired by Trickest.io with 25+ security tools and visual workflow builder*
+
+
+![image](https://github.com/user-attachments/assets/bf94fd3d-bce3-4f04-abe1-9bae8d080351)
+
+![image](https://github.com/user-attachments/assets/7cc82a4e-97fe-4a05-bff2-fae3473adefb)
+
+
 
 [🚀 Quick Start](#-quick-start) • [📖 Documentation](#-documentation) • [🛠️ Features](#-features) • [🐳 Docker](#-docker-deployment)
 
