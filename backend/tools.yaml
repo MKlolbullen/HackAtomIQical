@@ -1,0 +1,188 @@
+global_env: {}
+
+tools:
+  - id: amass
+    label: Amass
+    cmd: ["amass","enum", {kind: arg, name: domain, flag: "-d", mode: value}, {kind: arg, name: passive, flag: "-passive", mode: bool}, {kind: arg, name: output, flag: "-o", mode: value}]
+    args:
+      - { name: domain, type: string, label: "Domain", required: true }
+      - { name: passive, type: boolean, label: "Passive only", default: true }
+      - { name: output, type: string, label: "Output file", default: "amass.txt" }
+    out: { kind: "list:text", path: "amass.txt" }
+
+  - id: subfinder
+    label: Subfinder
+    cmd: ["subfinder", {kind: arg, name: domain, flag: "-d", mode: value}, {kind: arg, name: silent, flag: "-silent", mode: bool}, {kind: arg, name: threads, flag: "-t", mode: value}, {kind: arg, name: resolvers, flag: "-r", mode: join, sep: ","}, {kind: arg, name: output, flag: "-o", mode: value}]
+    args:
+      - { name: domain, type: string, label: "Domain", required: true }
+      - { name: silent, type: boolean, label: "Silent", default: true }
+      - { name: threads, type: number, label: "Threads", default: 50 }
+      - { name: resolvers, type: list<string>, label: "Resolvers" }
+      - { name: output, type: string, label: "Output file", default: "subdomains.txt" }
+    out: { kind: "list:text", path: "subdomains.txt" }
+
+  - id: dnsx
+    label: dnsx
+    cmd: ["dnsx", {kind: arg, name: input_file, flag: "-l", mode: value}, {kind: arg, name: a, flag: "-a", mode: bool}, {kind: arg, name: resp, flag: "-resp", mode: bool}, {kind: arg, name: output, flag: "-o", mode: value}]
+    args:
+      - { name: input_file, type: string, label: "Input file", default: "{{input_file}}" }
+      - { name: a, type: boolean, label: "A records", default: true }
+      - { name: resp, type: boolean, label: "Print response", default: false }
+      - { name: output, type: string, label: "Output file", default: "dnsx.txt" }
+    out: { kind: "txt", path: "dnsx.txt" }
+
+  - id: naabu
+    label: naabu
+    cmd: ["naabu", {kind: arg, name: input_file, flag: "-l", mode: value}, {kind: arg, name: ports, flag: "-p", mode: join, sep: ","}, {kind: arg, name: exclude_cdn, flag: "-ec", mode: bool}, {kind: arg, name: output, flag: "-o", mode: value}]
+    args:
+      - { name: input_file, type: string, label: "Input file", default: "{{input_file}}" }
+      - { name: ports, type: list<number>, label: "Ports", default: [80,443,8080,8443] }
+      - { name: exclude_cdn, type: boolean, label: "Exclude CDN", default: true }
+      - { name: output, type: string, label: "Output file", default: "naabu.txt" }
+    out: { kind: "list:text", path: "naabu.txt" }
+
+  - id: httpx
+    label: HTTPX
+    cmd: ["httpx", {kind: arg, name: input_file, flag: "-l", mode: value}, {kind: arg, name: json, flag: "-json", mode: bool}, {kind: arg, name: no_color, flag: "-nc", mode: bool}, {kind: arg, name: threads, flag: "-t", mode: value}, {kind: arg, name: output, flag: "-o", mode: value}]
+    args:
+      - { name: input_file, type: string, label: "Input file", default: "{{input_file}}" }
+      - { name: json, type: boolean, label: "JSON lines", default: true }
+      - { name: no_color, type: boolean, label: "No color", default: true }
+      - { name: threads, type: number, label: "Threads", default: 50 }
+      - { name: output, type: string, label: "Output file", default: "httpx.jsonl" }
+    out: { kind: "jsonl", path: "httpx.jsonl" }
+
+  - id: gau
+    label: gau
+    cmd: ["gau", {kind: arg, name: domain, flag: "", mode: value}]
+    args:
+      - { name: domain, type: string, label: "Domain", required: true }
+    out: { kind: "stdout", path: "" }
+
+  - id: gauplus
+    label: gauplus
+    cmd: ["gauplus", {kind: arg, name: domain, flag: "-d", mode: value}, {kind: arg, name: output, flag: "-o", mode: value}]
+    args:
+      - { name: domain, type: string, label: "Domain", required: true }
+      - { name: output, type: string, label: "Output file", default: "gauplus.txt" }
+    out: { kind: "list:text", path: "gauplus.txt" }
+
+  - id: katana
+    label: Katana
+    cmd: ["katana", {kind: arg, name: url, flag: "-u", mode: value}, {kind: arg, name: depth, flag: "-d", mode: value}, {kind: arg, name: output, flag: "-o", mode: value}]
+    args:
+      - { name: url, type: string, label: "URL", default: "{{url}}" }
+      - { name: depth, type: number, label: "Depth", default: 2 }
+      - { name: output, type: string, label: "Output file", default: "katana.txt" }
+    out: { kind: "list:url", path: "katana.txt" }
+
+  - id: jsfinder
+    label: JSFinder
+    cmd: ["python3","-m","JSFinder", {kind: arg, name: url, flag: "-u", mode: value}, {kind: arg, name: output, flag: "-o", mode: value}]
+    args:
+      - { name: url, type: string, label: "URL", default: "{{url}}" }
+      - { name: output, type: string, label: "Output file", default: "jsfinder.txt" }
+    out: { kind: "txt", path: "jsfinder.txt" }
+
+  - id: paramspider
+    label: ParamSpider
+    cmd: ["paramspider", {kind: arg, name: domain, flag: "--domain", mode: value}, {kind: arg, name: exclude, flag: "-e", mode: join, sep: ","}, {kind: arg, name: output, flag: "-o", mode: value}]
+    args:
+      - { name: domain, type: string, label: "Domain", required: true }
+      - { name: exclude, type: list<string>, label: "Exclude extensions", default: ["jpg","png","svg","gif","css"] }
+      - { name: output, type: string, label: "Output file", default: "paramspider.txt" }
+    out: { kind: "txt", path: "paramspider.txt" }
+
+  - id: linkfinder
+    label: LinkFinder
+    cmd: ["python3","-m","linkfinder", {kind: arg, name: input_file, flag: "-i", mode: value}, {kind: arg, name: output, flag: "-o", mode: value}]
+    args:
+      - { name: input_file, type: string, label: "Input JS/URL list", default: "{{input_file}}" }
+      - { name: output, type: string, label: "Output file", default: "linkfinder.html" }
+    out: { kind: "file", path: "linkfinder.html" }
+
+  - id: nuclei
+    label: Nuclei
+    cmd: ["nuclei", {kind: arg, name: input_file, flag: "-l", mode: value}, {kind: arg, name: severity, flag: "-severity", mode: join, sep: ","}, {kind: arg, name: rate_limit, flag: "-rl", mode: value}, {kind: arg, name: templates, flag: "-t", mode: join, sep: ","}, {kind: arg, name: output, flag: "-o", mode: value}]
+    args:
+      - { name: input_file, type: string, label: "Input file", default: "{{input_file}}" }
+      - { name: severity, type: list<enum>, label: "Severity", options: ["info","low","medium","high","critical"], default: ["medium","high","critical"] }
+      - { name: rate_limit, type: number, label: "Rate limit", default: 150 }
+      - { name: templates, type: list<string>, label: "Templates" }
+      - { name: output, type: string, label: "Output file", default: "nuclei.txt" }
+    out: { kind: "txt", path: "nuclei.txt" }
+
+  - id: dalfox
+    label: Dalfox
+    cmd: ["dalfox","file", {kind: arg, name: input_file, flag: "", mode: value}, {kind: arg, name: output, flag: "-o", mode: value}]
+    args:
+      - { name: input_file, type: string, label: "Input file", default: "{{input_file}}" }
+      - { name: output, type: string, label: "Output file", default: "dalfox.txt" }
+    out: { kind: "txt", path: "dalfox.txt" }
+
+  - id: kxss
+    label: KXSS
+    cmd: ["kxss", {kind: arg, name: input_file, flag: "", mode: value}]
+    args:
+      - { name: input_file, type: string, label: "Input URLs", default: "{{input_file}}" }
+    out: { kind: "stdout", path: "" }
+
+  - id: xsstrike
+    label: XSStrike
+    cmd: ["xsstrike", {kind: arg, name: url, flag: "-u", mode: value}, {kind: arg, name: crawl, flag: "--crawl", mode: bool}, {kind: arg, name: blind, flag: "--blind", mode: bool}, {kind: arg, name: output, flag: "-o", mode: value}]
+    args:
+      - { name: url, type: string, label: "URL", default: "{{url}}" }
+      - { name: crawl, type: boolean, label: "Crawl", default: false }
+      - { name: blind, type: boolean, label: "Blind", default: false }
+      - { name: output, type: string, label: "Output file", default: "xsstrike.txt" }
+    out: { kind: "txt", path: "xsstrike.txt" }
+
+  - id: jaeles
+    label: Jaeles
+    cmd: ["jaeles","scan", {kind: arg, name: input_file, flag: "-uL", mode: value}, {kind: arg, name: signatures, flag: "-s", mode: join, sep: ","}, {kind: arg, name: output, flag: "-o", mode: value}]
+    args:
+      - { name: input_file, type: string, label: "URL list", default: "{{input_file}}" }
+      - { name: signatures, type: list<string>, label: "Signatures" }
+      - { name: output, type: string, label: "Output dir", default: "jaeles_out" }
+    out: { kind: "dir", path: "jaeles_out" }
+
+  - id: gowitness
+    label: GoWitness
+    cmd: ["gowitness","file", {kind: arg, name: input_file, flag: "-f", mode: value}, {kind: arg, name: output, flag: "-o", mode: value}]
+    args:
+      - { name: input_file, type: string, label: "Input file", default: "{{input_file}}" }
+      - { name: output, type: string, label: "Output dir", default: "gowitness" }
+    out: { kind: "dir", path: "gowitness" }
+
+  - id: aquatone
+    label: Aquatone
+    cmd: ["aquatone", {kind: arg, name: input_file, flag: "-list", mode: value}, {kind: arg, name: out, flag: "-out", mode: value}]
+    args:
+      - { name: input_file, type: string, label: "Input file", default: "{{input_file}}" }
+      - { name: out, type: string, label: "Output dir", default: "aquatone" }
+    out: { kind: "dir", path: "aquatone" }
+
+  - id: sublist3r
+    label: Sublist3r
+    cmd: ["sublist3r", {kind: arg, name: domain, flag: "-d", mode: value}, {kind: arg, name: threads, flag: "-t", mode: value}, {kind: arg, name: output, flag: "-o", mode: value}]
+    args:
+      - { name: domain, type: string, label: "Domain", required: true }
+      - { name: threads, type: number, label: "Threads", default: 20 }
+      - { name: output, type: string, label: "Output file", default: "sublist3r.txt" }
+    out: { kind: "list:text", path: "sublist3r.txt" }
+
+  - id: arjun
+    label: Arjun
+    cmd: ["arjun", {kind: arg, name: url, flag: "-u", mode: value}, {kind: arg, name: output, flag: "-o", mode: value}]
+    args:
+      - { name: url, type: string, label: "URL", default: "{{url}}" }
+      - { name: output, type: string, label: "Output file", default: "arjun.json" }
+    out: { kind: "file", path: "arjun.json" }
+
+  - id: cariddi
+    label: Cariddi
+    cmd: ["cariddi", {kind: arg, name: input_file, flag: "-list", mode: value}, {kind: arg, name: output, flag: "-o", mode: value}]
+    args:
+      - { name: input_file, type: string, label: "URL list", default: "{{input_file}}" }
+      - { name: output, type: string, label: "Output file", default: "cariddi.txt" }
+    out: { kind: "txt", path: "cariddi.txt" }
