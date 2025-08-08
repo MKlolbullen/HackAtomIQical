@@ -135,9 +135,10 @@ docker-compose up -d --scale hackatomiq-backend=3
 <summary><strong>🔵 Reconnaissance (25 tools)</strong></summary>
 
 - **Subdomain Discovery**: Subfinder, Amass, JSubfinder, Chaos, Assetfinder
-- **Network Scanning**: Nmap, Masscan, RustScan, Naabu, Zmap
+- **Network Scanning**: Nmap, Masscan, RustScan, Naabu, Zmap, Smap
 - **DNS Enumeration**: DNSrecon, DNSx, Fierce, DNSMap, MassDNS
 - **OSINT**: theHarvester, Recon-ng, Shodan, Censys, SpiderFoot
+- **CRAWLING**: Katana, Hakrawler, Photon, Gospider
 - **Web Discovery**: HTTPx, Aquatone, EyeWitness, Gowitness, WebScreenshot
 
 </details>
@@ -158,32 +159,11 @@ docker-compose up -d --scale hackatomiq-backend=3
 <details>
 <summary><strong>🟠 Vulnerability Scanning (20 tools)</strong></summary>
 
-- **Multi-purpose**: Nuclei, OpenVAS, Nessus, Nexpose, Rapid7
+- **Multi-purpose**: Nuclei, Dalfox, XSStrike, XSRFprobe
 - **Web Specific**: Nikto, W3AF, OWASP ZAP, Arachni, Skipfish
-- **Network**: Nmap NSE, Vulners, SearchSploit, ExploitDB
+- **Network**: Nmap NSE, Vulners
 - **Specialized**: WPScan, JoomScan, DroopeScan, CMSmap, BlindElephant
 
-</details>
-
-<details>
-<summary><strong>🔴 Exploitation & Post-Exploitation (15 tools)</strong></summary>
-
-- **Frameworks**: Metasploit, Empire, Cobalt Strike, Covenant
-- **Payload Generation**: MSFvenom, Unicorn, Veil, TheFatRat
-- **Post-Exploitation**: Mimikatz, BloodHound, PowerSploit, Empire
-- **Privilege Escalation**: LinPEAS, WinPEAS, Linux Exploit Suggester
-
-</details>
-
-<details>
-<summary><strong>🟣 Network Analysis (15 tools)</strong></summary>
-
-- **Traffic Analysis**: Wireshark, tcpdump, tshark, NetworkMiner
-- **Network Tools**: Netcat, Socat, hping3, Scapy, Nping
-- **MITM**: Ettercap, Bettercap, MITMproxy, SSLstrip
-- **Wireless**: Aircrack-ng, Kismet, Wifite, Reaver, PixieWPS
-
-</details>
 
 <details>
 <summary><strong>🔷 OSINT & Intelligence (20 tools)</strong></summary>
@@ -191,8 +171,8 @@ docker-compose up -d --scale hackatomiq-backend=3
 - **Social Media**: Sherlock, Social Mapper, Twint, InstagramOSINT
 - **Email**: theHarvester, Hunter.io, EmailHarvester, h8mail
 - **GitHub**: GitDorker, TruffleHog, GitLeaks, GitRob, Gitrob
-- **Domain Intelligence**: Amass, Subfinder, Certificate Transparency
-- **People Search**: Maltego, SpiderFoot, Recon-ng, OSINT Framework
+- **Domain Intelligence**: Amass, Assetfinder, Subfinder, CSPRecon, Certificate Transparency
+- **People Search**: BBoT, SpiderFoot, Recon-ng, OSINT Framework
 
 </details>
 
@@ -205,16 +185,6 @@ docker-compose up -d --scale hackatomiq-backend=3
 - **GCP**: GCP Scanner, Cloud Asset Inventory
 
 </details>
-
-<details>
-<summary><strong>📱 Mobile Security (8 tools)</strong></summary>
-
-- **Android**: MobSF, APKTool, Jadx, Frida, Objection
-- **iOS**: iMazing, 3uTools, iOS App Analyzer
-- **Dynamic Analysis**: Frida, Objection, Runtime Mobile Security
-
-</details>
-
 <details>
 <summary><strong>🔐 Secrets & Credentials (10 tools)</strong></summary>
 
