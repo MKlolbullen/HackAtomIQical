@@ -99,7 +99,7 @@ export default function App(){
                   {status[n.id]||"idle"}
                 </span>
               </div>
-              <pre className="text-[11px] whitespace-pre-wrap">{(logs[n.id]||[]).slice(-400).join("")}</pre>
+              <pre className="text-[11px] whitespace-pre-wrap">{(logs[n.id]||[]).slice(-400).join("\n")}</pre>
             </div>
           ))}
         </div>

@@ -19,8 +19,18 @@ def load_registry():
 TOOLS, GLOBAL_ENV = load_registry()
 
 app = FastAPI()
-app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_credentials=True,
-                   allow_methods=["*"], allow_headers=["*"])
+
+# CORS: honor ALLOWED_ORIGINS env (comma-separated). If wildcard, disable credentials.
+_allowed_origins = os.environ.get("ALLOWED_ORIGINS", "*")
+ALLOWED_ORIGINS = [o.strip() for o in _allowed_origins.split(",") if o.strip()]
+allow_credentials = not (len(ALLOWED_ORIGINS) == 1 and ALLOWED_ORIGINS[0] == "*")
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=ALLOWED_ORIGINS,
+    allow_credentials=allow_credentials,
+    allow_methods=["*"],
+    allow_headers=["*"]
+)
 
 class ArgValue(BaseModel):
     value: Any
@@ -66,10 +76,24 @@ def topo(nodes: List[Node], edges: List[Edge]) -> List[str]:
     if len(order)!=len(nodes): raise HTTPException(400, "Cycle in workflow")
     return order
 
-async def ws_broadcast(run_id:str, msg:Dict[str,Any]):
-    for ws in RUN_WS.get(run_id,[]):
-        try: await ws.send_text(json.dumps(msg))
-        except: pass
+async def ws_broadcast(run_id: str, msg: Dict[str, Any]):
+    """Send a message to all websockets for a run, pruning any dead ones."""
+    clients = RUN_WS.get(run_id, [])
+    if not clients:
+        return
+    dead: List[WebSocket] = []
+    payload = json.dumps(msg)
+    for ws in clients:
+        try:
+            await ws.send_text(payload)
+        except Exception:
+            dead.append(ws)
+    if dead:
+        for ws in dead:
+            try:
+                clients.remove(ws)
+            except ValueError:
+                pass
 
 def apply_args(tool_def: Dict[str,Any], params: Dict[str,Any]) -> Dict[str,Any]:
     arg_specs = {a["name"]:a for a in tool_def.get("args", [])}
