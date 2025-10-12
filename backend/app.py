@@ -97,9 +97,11 @@ def build_command(tool_def: Dict[str,Any], values: Dict[str,Any], runtime_vars: 
             spec = part
             name = spec["name"]
             v = values.get(name)
-            if v in (None, "", [], False):
-                if v==0: pass
-                else: continue
+            # Skip empty/falsy values, but 0 is a valid numeric value
+            if v == 0:
+                pass  # 0 is valid, continue processing
+            elif v in (None, "", [], False):
+                continue  # Skip these empty/falsy values
             flag = spec.get("flag")
             mode = spec.get("mode","value")  # value|bool|repeat|join
             if mode=="bool":
