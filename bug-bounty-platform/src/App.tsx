@@ -24,6 +24,7 @@ export default function App(){
   const [runId, setRunId] = useState<string>();
   const [logs, setLogs] = useState<Record<string,string[]>>({});
   const [status, setStatus] = useState<Record<string,string>>({});
+  const [ws, setWs] = useState<WebSocket | null>(null);
 
   useEffect(()=>{ listTools().then(r=>{
     const map: Record<string,ToolDef> = {}; r.tools.forEach((t:any)=> map[t.id]=t); setTools(map);
@@ -34,13 +35,28 @@ export default function App(){
   }
 
   async function onRun(){
+    // Close existing WebSocket connection if any
+    if (ws) {
+      ws.close();
+    }
+    
     const { run_id } = await startRun(wf, "local");
     setRunId(run_id);
-    connectRun(run_id, (m)=>{
+    const newWs = connectRun(run_id, (m)=>{
       if (m.type==="log") setLogs(p=>({...p,[m.node]:[...(p[m.node]||[]), m.line]}));
       if (m.type==="node_status") setStatus(p=>({...p,[m.node]: m.status}));
     });
+    setWs(newWs);
   }
+  
+  // Cleanup WebSocket on component unmount
+  useEffect(() => {
+    return () => {
+      if (ws) {
+        ws.close();
+      }
+    };
+  }, [ws]);
 
   const rfNodes: Node[] = wf.nodes.map((n,i)=>({ id:n.id, position:{x:150+i*260,y:160}, data:{label:n.data.label} }));
   const rfEdges: Edge[] = wf.edges;
