@@ -3,14 +3,14 @@ import { useEffect, useMemo, useState } from "react";
 import ReactFlow, { Background, Controls, MiniMap, Edge, Node } from "reactflow";
 import "reactflow/dist/style.css";
 import type { Workflow, FlowNode, FlowEdge, ToolDef } from "./types";
-import { listTools, startRun, connectRun } from "./api";
+import { listTools, startRun, connectRun, fetchWorkflows, saveWorkflow } from "./api";
 import ArgsPanel from "./ArgsPanel";
 
 const initial: Workflow = {
   id: "wf1",
   name: "Recon→HTTPX→Nuclei",
   nodes: [
-    { id: "n1", type: "tool", data: { tool: "subfinder", params: {}, label: "Subfinder" } },
+    { id: "n1", type: "tool", data: { tool: "subfinder", params: { domain: { value: "example.com" } }, label: "Subfinder" } },
     { id: "n2", type: "tool", data: { tool: "httpx", params: {}, label: "HTTPX" } },
     { id: "n3", type: "tool", data: { tool: "nuclei", params: {}, label: "Nuclei" } },
   ],
@@ -19,15 +19,31 @@ const initial: Workflow = {
 
 export default function App(){
   const [wf,setWf]=useState<Workflow>(initial);
+  const [workflows, setWorkflows] = useState<Workflow[]>([]);
   const [selected, setSelected] = useState<string|null>(null);
   const [tools, setTools] = useState<Record<string,ToolDef>>({});
   const [runId, setRunId] = useState<string>();
   const [logs, setLogs] = useState<Record<string,string[]>>({});
   const [status, setStatus] = useState<Record<string,string>>({});
 
-  useEffect(()=>{ listTools().then(r=>{
-    const map: Record<string,ToolDef> = {}; r.tools.forEach((t:any)=> map[t.id]=t); setTools(map);
-  }); },[]);
+  useEffect(()=>{
+    listTools().then(r=>{
+      const map: Record<string,ToolDef> = {}; r.tools.forEach((t:any)=> map[t.id]=t); setTools(map);
+    });
+    fetchWorkflows().then(r => setWorkflows(r.workflows));
+  },[]);
+
+  async function onSave() {
+    await saveWorkflow(wf);
+    alert("Saved!");
+    fetchWorkflows().then(r => setWorkflows(r.workflows));
+  }
+
+  function loadWorkflow(id: string) {
+    if (!id) return;
+    const found = workflows.find(w => w.id === id);
+    if (found) setWf(found);
+  }
 
   function onArgsChange(nodeId: string, params: any){
     setWf(prev=>({ ...prev, nodes: prev.nodes.map(n=> n.id===nodeId ? ({...n, data: {...n.data, params}}) : n) }));
@@ -37,6 +53,7 @@ export default function App(){
     const { run_id } = await startRun(wf, "local");
     setRunId(run_id);
     connectRun(run_id, (m)=>{
+      console.log("WS MSG:", m);
       if (m.type==="log") setLogs(p=>({...p,[m.node]:[...(p[m.node]||[]), m.line]}));
       if (m.type==="node_status") setStatus(p=>({...p,[m.node]: m.status}));
     });
@@ -56,6 +73,17 @@ export default function App(){
         <div className="flex items-center gap-3">
           <span className="font-semibold">mini‑Trickest</span>
           <button onClick={onRun} className="px-3 py-1 rounded bg-black text-white text-sm">Run</button>
+          <button onClick={onSave} className="px-3 py-1 rounded bg-blue-600 text-white text-sm">Save</button>
+          <select
+            className="border rounded text-sm p-1"
+            onChange={e => loadWorkflow(e.target.value)}
+            defaultValue=""
+          >
+            <option value="" disabled>Load Workflow...</option>
+            {workflows.map(w => (
+              <option key={w.id} value={w.id}>{w.name}</option>
+            ))}
+          </select>
           <span className="text-xs text-gray-500">Run ID: {runId||"—"}</span>
         </div>
         <div className="text-xs text-gray-500">Builder / Runner</div>

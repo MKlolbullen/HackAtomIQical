@@ -1,0 +1,11 @@
+__pycache__/
+*.pyc
+*.log
+node_modules/
+dist/
+build/
+.vite/
+.env
+.DS_Store
+backend/workflows.json
+backend/projects/

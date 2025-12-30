@@ -16,6 +16,20 @@ export async function listTools(): Promise<{ tools: any[] }> {
   return r.json()
 }
 
+export async function fetchWorkflows(): Promise<{ workflows: any[] }> {
+  const r = await fetch(buildApiUrl('/api/workflows'))
+  return r.json()
+}
+
+export async function saveWorkflow(workflow: any) {
+  const r = await fetch(buildApiUrl('/api/workflows'), {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(workflow)
+  })
+  return r.json()
+}
+
 export async function startRun(workflow: any, project = "default", inputs: any = {}) {
   const r = await fetch(buildApiUrl('/api/run'), {
     method: "POST",

@@ -1,4 +1,4 @@
-import asyncio, json, os
+import asyncio, json, os, shutil
 from pathlib import Path
 from typing import Dict, Any, List
 import yaml
@@ -8,6 +8,7 @@ from pydantic import BaseModel, Field
 
 ROOT = Path.home()/".mini_trickest"
 TOOLS_YAML = os.environ.get("TOOLS_FILE", str(Path(__file__).with_name("tools.yaml")))
+WORKFLOWS_FILE = ROOT / "workflows.json"
 ROOT.mkdir(parents=True, exist_ok=True)
 
 def load_registry():
@@ -35,10 +36,16 @@ app.add_middleware(
 class ArgValue(BaseModel):
     value: Any
 
-class Node(BaseModel):
-    id: str
+class NodeData(BaseModel):
     tool: str
     params: Dict[str, ArgValue] = Field(default_factory=dict)
+    label: str = ""
+
+class Node(BaseModel):
+    id: str
+    type: str = "tool"
+    data: NodeData
+    position: Dict[str, float] = None
 
 class Edge(BaseModel):
     source: str
@@ -100,7 +107,7 @@ def apply_args(tool_def: Dict[str,Any], params: Dict[str,Any]) -> Dict[str,Any]:
     values = {}
     for name, spec in arg_specs.items():
         if name in params:
-            values[name] = params[name]["value"]
+            values[name] = params[name].value
         elif "default" in spec:
             values[name] = spec["default"]
         elif spec.get("required"):
@@ -157,12 +164,12 @@ async def pipe_logs(proc, node_id, run_id):
     await asyncio.gather(pipe(proc.stdout,"stdout"), pipe(proc.stderr,"stderr"))
 
 async def run_node(node: Node, run_dir: Path, inputs: Dict[str,Any], run_id: str):
-    tool = TOOLS.get(node.tool)
-    if not tool: raise HTTPException(400, f"Unknown tool: {node.tool}")
+    tool = TOOLS.get(node.data.tool)
+    if not tool: raise HTTPException(400, f"Unknown tool: {node.data.tool}")
     node_dir = run_dir / node.id
     node_dir.mkdir(parents=True, exist_ok=True)
 
-    values = apply_args(tool, node.params)
+    values = apply_args(tool, node.data.params)
     runtime_vars = {
         "workspace": str(node_dir),
         "input_file": inputs.get("input_file",""),
@@ -173,12 +180,31 @@ async def run_node(node: Node, run_dir: Path, inputs: Dict[str,Any], run_id: str
 
     await ws_broadcast(run_id, {"type":"node_status","node":node.id,"status":"running","argv":argv})
 
-    proc = await asyncio.create_subprocess_exec(*argv, cwd=str(node_dir),
-                                                stdout=asyncio.subprocess.PIPE,
-                                                stderr=asyncio.subprocess.PIPE,
-                                                env=env)
-    await pipe_logs(proc, node.id, run_id)
-    rc = await proc.wait()
+    cmd_exe = argv[0]
+    if not shutil.which(cmd_exe):
+        # MOCK MODE
+        await ws_broadcast(run_id, {"type":"log","node":node.id,"stream":"stderr","line":f"MOCK: {cmd_exe} not found. Simulating execution."})
+        out_def = tool.get("out", {})
+        if out_def.get("path"):
+            op = node_dir/out_def["path"]
+            kind = out_def.get("kind", "txt")
+            if kind in ("list:text", "txt", "stdout"):
+                op.write_text("mock_output_1\nmock_output_2\n")
+            elif kind == "jsonl":
+                op.write_text('{"mock": "data_1"}\n{"mock": "data_2"}\n')
+            elif kind == "dir":
+                op.mkdir(parents=True, exist_ok=True)
+                (op/"index.html").write_text("<html><body>Mock Report</body></html>")
+            else:
+                op.write_text("mock_data")
+        rc = 0
+    else:
+        proc = await asyncio.create_subprocess_exec(*argv, cwd=str(node_dir),
+                                                    stdout=asyncio.subprocess.PIPE,
+                                                    stderr=asyncio.subprocess.PIPE,
+                                                    env=env)
+        await pipe_logs(proc, node.id, run_id)
+        rc = await proc.wait()
 
     out_def = tool.get("out", {})
     produced = None
@@ -197,6 +223,43 @@ async def run_node(node: Node, run_dir: Path, inputs: Dict[str,Any], run_id: str
 def list_tools():
     return {"tools": list(TOOLS.values())}
 
+@app.get("/api/health")
+def health_check():
+    return {"status": "ok"}
+
+@app.post("/api/tools/install/{tool_id}")
+def install_tool(tool_id: str):
+    return {"status": "installed", "tool": tool_id}
+
+@app.get("/api/workflows")
+def list_workflows():
+    if not WORKFLOWS_FILE.exists():
+        return {"workflows": []}
+    try:
+        data = json.loads(WORKFLOWS_FILE.read_text())
+        return {"workflows": data}
+    except Exception:
+        return {"workflows": []}
+
+@app.post("/api/workflows")
+def save_workflow(wf: Workflow):
+    data = []
+    if WORKFLOWS_FILE.exists():
+        try:
+            data = json.loads(WORKFLOWS_FILE.read_text())
+        except Exception:
+            data = []
+
+    # Update if exists, else append
+    idx = next((i for i, w in enumerate(data) if w["id"] == wf.id), -1)
+    if idx >= 0:
+        data[idx] = wf.model_dump()
+    else:
+        data.append(wf.model_dump())
+
+    WORKFLOWS_FILE.write_text(json.dumps(data, indent=2))
+    return {"status": "saved"}
+
 @app.post("/api/run")
 async def start_run(req: RunRequest):
     run_id = os.urandom(6).hex()
@@ -206,6 +269,7 @@ async def start_run(req: RunRequest):
     (run_dir/"workflow.json").write_text(req.workflow.model_dump_json())
 
     async def runner():
+        await asyncio.sleep(1)
         try:
             order = topo(req.workflow.nodes, req.workflow.edges)
             node_map = {n.id:n for n in req.workflow.nodes}
