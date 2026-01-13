@@ -1,0 +1,119 @@
+#!/bin/sh
+
+# An example hook script to validate a patch (and/or patch series) before
+# sending it via email.
+#
+# The hook should exit with non-zero status after issuing an appropriate
+# message if it wants to prevent the email(s) from being sent.
+#
+# To enable this hook, rename this file to "sendemail-validate".
+#
+# By default, it will only check that the patch(es) can be applied on top of
+# the default upstream branch without conflicts in a secondary worktree. After
+# validation (successful or not) of the last patch of a series, the worktree
+# will be deleted.
+#
+# The following config variables can be set to change the default remote and
+# remote ref that are used to apply the patches against:
+#
+#   sendemail.validateRemote (default: origin)
+#   sendemail.validateRemoteRef (default: HEAD)
+#
+# Replace the TODO placeholders with appropriate checks according to your
+# needs.
+
+validate_cover_letter () {
+	file="$1"
+	# Check for empty file
+	if [ ! -s "$file" ]; then
+		echo "Error: Cover letter is empty." >&2
+		return 1
+	fi
+
+	# Check for default subject
+	if grep -q "\*\*\* SUBJECT HERE \*\*\*" "$file"; then
+		echo "Error: Cover letter subject not edited." >&2
+		return 1
+	fi
+
+	# Check for default blurb
+	if grep -q "\*\*\* BLURB HERE \*\*\*" "$file"; then
+		echo "Error: Cover letter blurb not edited." >&2
+		return 1
+	fi
+
+	# Check subject line length (soft limit 50 chars for the title)
+	subject=$(grep "^Subject:" "$file" | head -n 1)
+	# Remove "Subject: " prefix
+	subject_content=${subject#Subject: }
+	# Remove [PATCH ...] prefixes to isolate the title
+	clean_subject=$(echo "$subject_content" | sed 's/\[[^]]*\] *//g')
+	len=${#clean_subject}
+	if [ "$len" -gt 50 ]; then
+		echo "Warning: Subject line is too long ($len > 50 chars)." >&2
+	fi
+
+	# Check body line length (soft limit 72 chars)
+	# Skip headers (everything before first empty line)
+	if sed '1,/^$/d' "$file" | grep -q '.\{73\}'; then
+		echo "Warning: Body line too long (> 72 chars)." >&2
+	fi
+
+	return 0
+}
+
+validate_patch () {
+	file="$1"
+	# Ensure that the patch applies without conflicts.
+	git am -3 "$file" || return
+
+	# Check for trailing whitespace in added lines
+	# Look for lines starting with + that are not +++ (header)
+	if grep "^+[^+]" "$file" | grep -q "[[:space:]]$"; then
+		echo "Error: Trailing whitespace found in patch." >&2
+		return 1
+	fi
+
+	return 0
+}
+
+validate_series () {
+	# TODO: Replace with appropriate checks for the whole series
+	# (e.g. quick build, coding style checks, etc.).
+	true
+}
+
+# main -------------------------------------------------------------------------
+
+if test "$GIT_SENDEMAIL_FILE_COUNTER" = 1
+then
+	remote=$(git config --default origin --get sendemail.validateRemote) &&
+	ref=$(git config --default HEAD --get sendemail.validateRemoteRef) &&
+	worktree=$(mktemp --tmpdir -d sendemail-validate.XXXXXXX) &&
+	git worktree add -fd --checkout "$worktree" "refs/remotes/$remote/$ref" &&
+	git config --replace-all sendemail.validateWorktree "$worktree"
+else
+	worktree=$(git config --get sendemail.validateWorktree)
+fi || {
+	echo "sendemail-validate: error: failed to prepare worktree" >&2
+	exit 1
+}
+
+unset GIT_DIR GIT_WORK_TREE
+# Resolve absolute path before changing directory
+file_path=$(realpath "$1")
+cd "$worktree" &&
+
+if grep -q "^diff --git " "$file_path"
+then
+	validate_patch "$file_path"
+else
+	validate_cover_letter "$file_path"
+fi &&
+
+if test "$GIT_SENDEMAIL_FILE_COUNTER" = "$GIT_SENDEMAIL_FILE_TOTAL"
+then
+	git config --unset-all sendemail.validateWorktree &&
+	trap 'git worktree remove -ff "$worktree"' EXIT &&
+	validate_series
+fi
