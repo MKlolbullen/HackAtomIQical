@@ -1,0 +1,10 @@
+{
+  "mcpServers": {
+    "hackatomiqical": {
+      "command": "/path/to/your/python-venv/bin/python",
+      "args": [
+        "/path/to/your/project/mcp_server.py"
+      ]
+    }
+  }
+}
