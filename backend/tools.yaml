@@ -1,188 +1,462 @@
-global_env: {}
+#Ultimate tools.yaml (v5.0)
+global_env:
+  GOMAXPROCS: "4"
+  # Keys can be injected here or passed via args
+  # SHODAN_API_KEY: "..."
+  # GITHUB_TOKEN: "..."
 
 tools:
-  - id: amass
-    label: Amass
-    cmd: ["amass","enum", {kind: arg, name: domain, flag: "-d", mode: value}, {kind: arg, name: passive, flag: "-passive", mode: bool}, {kind: arg, name: output, flag: "-o", mode: value}]
-    args:
-      - { name: domain, type: string, label: "Domain", required: true }
-      - { name: passive, type: boolean, label: "Passive only", default: true }
-      - { name: output, type: string, label: "Output file", default: "amass.txt" }
-    out: { kind: "list:text", path: "amass.txt" }
-
+  # ============================================================================
+  # 🔵 RECONNAISSANCE: Subdomains, DNS & Permutations
+  # ============================================================================
   - id: subfinder
     label: Subfinder
-    cmd: ["subfinder", {kind: arg, name: domain, flag: "-d", mode: value}, {kind: arg, name: silent, flag: "-silent", mode: bool}, {kind: arg, name: threads, flag: "-t", mode: value}, {kind: arg, name: resolvers, flag: "-r", mode: join, sep: ","}, {kind: arg, name: output, flag: "-o", mode: value}]
+    description: "Fast passive subdomain enumeration"
+    cmd:
+      - "subfinder"
+      - {kind: arg, name: domain, flag: "-d", mode: value}
+      - {kind: arg, name: all, flag: "-all", mode: bool}
+      - {kind: arg, name: silent, flag: "-silent", mode: bool}
+      - {kind: arg, name: recursive, flag: "-recursive", mode: bool}
+      - {kind: arg, name: sources, flag: "-s", mode: join, sep: ","}
+      - {kind: arg, name: exclude, flag: "-es", mode: join, sep: ","}
+      - {kind: arg, name: output, flag: "-o", mode: value}
     args:
-      - { name: domain, type: string, label: "Domain", required: true }
-      - { name: silent, type: boolean, label: "Silent", default: true }
-      - { name: threads, type: number, label: "Threads", default: 50 }
-      - { name: resolvers, type: list<string>, label: "Resolvers" }
-      - { name: output, type: string, label: "Output file", default: "subdomains.txt" }
+      - { name: domain, type: string, label: "Target Domain", required: true }
+      - { name: all, type: boolean, label: "Use All Sources", default: true }
+      - { name: silent, type: boolean, label: "Silent Mode", default: true }
+      - { name: recursive, type: boolean, label: "Recursive", default: false }
+      - { name: sources, type: list<string>, label: "Specific Sources" }
+      - { name: exclude, type: list<string>, label: "Exclude Sources" }
+      - { name: output, type: string, label: "Output File", default: "subdomains.txt" }
     out: { kind: "list:text", path: "subdomains.txt" }
 
-  - id: dnsx
-    label: dnsx
-    cmd: ["dnsx", {kind: arg, name: input_file, flag: "-l", mode: value}, {kind: arg, name: a, flag: "-a", mode: bool}, {kind: arg, name: resp, flag: "-resp", mode: bool}, {kind: arg, name: output, flag: "-o", mode: value}]
+  - id: amass_enum
+    label: Amass Enum
+    description: "In-depth Asset Discovery and Mapping"
+    cmd:
+      - "amass"
+      - "enum"
+      - {kind: arg, name: domain, flag: "-d", mode: value}
+      - {kind: arg, name: passive, flag: "-passive", mode: bool}
+      - {kind: arg, name: active, flag: "-active", mode: bool}
+      - {kind: arg, name: brute, flag: "-brute", mode: bool}
+      - {kind: arg, name: config, flag: "-config", mode: value}
+      - {kind: arg, name: output, flag: "-o", mode: value}
     args:
-      - { name: input_file, type: string, label: "Input file", default: "{{input_file}}" }
-      - { name: a, type: boolean, label: "A records", default: true }
-      - { name: resp, type: boolean, label: "Print response", default: false }
-      - { name: output, type: string, label: "Output file", default: "dnsx.txt" }
-    out: { kind: "txt", path: "dnsx.txt" }
+      - { name: domain, type: string, label: "Target Domain", required: true }
+      - { name: passive, type: boolean, label: "Passive Mode", default: true }
+      - { name: active, type: boolean, label: "Active Mode", default: false }
+      - { name: brute, type: boolean, label: "Brute Force", default: false }
+      - { name: config, type: string, label: "Config File" }
+      - { name: output, type: string, label: "Output File", default: "amass.txt" }
+    out: { kind: "list:text", path: "amass.txt" }
 
-  - id: naabu
-    label: naabu
-    cmd: ["naabu", {kind: arg, name: input_file, flag: "-l", mode: value}, {kind: arg, name: ports, flag: "-p", mode: join, sep: ","}, {kind: arg, name: exclude_cdn, flag: "-ec", mode: bool}, {kind: arg, name: output, flag: "-o", mode: value}]
+  - id: alterx
+    label: AlterX
+    description: "Fast subdomain permutation generator"
+    cmd:
+      - "alterx"
+      - {kind: arg, name: input_file, flag: "-l", mode: value}
+      - {kind: arg, name: patterns, flag: "-p", mode: value}
+      - {kind: arg, name: enrich, flag: "-enrich", mode: bool}
+      - {kind: arg, name: limit, flag: "-limit", mode: value}
+      - {kind: arg, name: output, flag: "-o", mode: value}
     args:
-      - { name: input_file, type: string, label: "Input file", default: "{{input_file}}" }
-      - { name: ports, type: list<number>, label: "Ports", default: [80,443,8080,8443] }
-      - { name: exclude_cdn, type: boolean, label: "Exclude CDN", default: true }
-      - { name: output, type: string, label: "Output file", default: "naabu.txt" }
-    out: { kind: "list:text", path: "naabu.txt" }
+      - { name: input_file, type: string, label: "Input Subdomains", default: "{{input_file}}" }
+      - { name: patterns, type: string, label: "Custom Patterns" }
+      - { name: enrich, type: boolean, label: "Enrich Wordlist", default: true }
+      - { name: limit, type: number, label: "Limit Results", default: 20000 }
+      - { name: output, type: string, label: "Output File", default: "permutations.txt" }
+    out: { kind: "list:text", path: "permutations.txt" }
 
+  - id: puredns
+    label: PureDNS
+    description: "Fast DNS resolver with wildcard filtering"
+    cmd:
+      - "puredns"
+      - "resolve"
+      - {kind: arg, name: input_file, flag: "", mode: value}
+      - {kind: arg, name: resolvers, flag: "-r", mode: value}
+      - {kind: arg, name: wildcards, flag: "--wildcard-tests", mode: value}
+      - {kind: arg, name: write, flag: "-w", mode: value}
+    args:
+      - { name: input_file, type: string, label: "Input Domains", default: "{{input_file}}" }
+      - { name: resolvers, type: string, label: "Resolvers List", default: "/usr/share/wordlists/resolvers.txt" }
+      - { name: wildcards, type: number, label: "Wildcard Tests", default: 20 }
+      - { name: write, type: string, label: "Output File", default: "resolved.txt" }
+    out: { kind: "list:text", path: "resolved.txt" }
+
+  - id: shuffledns
+    label: ShuffleDNS
+    description: "Wrapper around massdns for enumeration"
+    cmd:
+      - "shuffledns"
+      - {kind: arg, name: domain, flag: "-d", mode: value}
+      - {kind: arg, name: list, flag: "-list", mode: value}
+      - {kind: arg, name: resolvers, flag: "-r", mode: value}
+      - {kind: arg, name: wordlist, flag: "-w", mode: value}
+      - {kind: arg, name: output, flag: "-o", mode: value}
+    args:
+      - { name: domain, type: string, label: "Domain", required: true }
+      - { name: list, type: string, label: "Existing Subdomains", default: "{{input_file}}" }
+      - { name: resolvers, type: string, label: "Resolvers", default: "resolvers.txt" }
+      - { name: wordlist, type: string, label: "Brute Wordlist", default: "best-dns-wordlist.txt" }
+      - { name: output, type: string, label: "Output File", default: "shuffledns.txt" }
+    out: { kind: "list:text", path: "shuffledns.txt" }
+
+  # ============================================================================
+  # 🟢 WEB DISCOVERY: Probing, Crawling & Visuals
+  # ============================================================================
   - id: httpx
     label: HTTPX
-    cmd: ["httpx", {kind: arg, name: input_file, flag: "-l", mode: value}, {kind: arg, name: json, flag: "-json", mode: bool}, {kind: arg, name: no_color, flag: "-nc", mode: bool}, {kind: arg, name: threads, flag: "-t", mode: value}, {kind: arg, name: output, flag: "-o", mode: value}]
+    description: "Advanced HTTP Toolkit"
+    cmd:
+      - "httpx"
+      - {kind: arg, name: input_file, flag: "-l", mode: value}
+      - {kind: arg, name: ports, flag: "-p", mode: join, sep: ","}
+      - {kind: arg, name: status_code, flag: "-sc", mode: bool}
+      - {kind: arg, name: title, flag: "-title", mode: bool}
+      - {kind: arg, name: tech, flag: "-tech-detect", mode: bool}
+      - {kind: arg, name: follow_host_redirects, flag: "-fhr", mode: bool}
+      - {kind: arg, name: threads, flag: "-t", mode: value}
+      - {kind: arg, name: proxy, flag: "-http-proxy", mode: value}
+      - {kind: arg, name: output, flag: "-o", mode: value}
     args:
-      - { name: input_file, type: string, label: "Input file", default: "{{input_file}}" }
-      - { name: json, type: boolean, label: "JSON lines", default: true }
-      - { name: no_color, type: boolean, label: "No color", default: true }
+      - { name: input_file, type: string, label: "Input List", default: "{{input_file}}" }
+      - { name: ports, type: list<string>, label: "Ports", default: ["80","443","8080","8443","3000"] }
+      - { name: status_code, type: boolean, label: "Show Status", default: true }
+      - { name: title, type: boolean, label: "Show Title", default: true }
+      - { name: tech, type: boolean, label: "Detect Tech", default: true }
+      - { name: follow_host_redirects, type: boolean, label: "Follow Host Redirects", default: true }
       - { name: threads, type: number, label: "Threads", default: 50 }
-      - { name: output, type: string, label: "Output file", default: "httpx.jsonl" }
-    out: { kind: "jsonl", path: "httpx.jsonl" }
-
-  - id: gau
-    label: gau
-    cmd: ["gau", {kind: arg, name: domain, flag: "", mode: value}]
-    args:
-      - { name: domain, type: string, label: "Domain", required: true }
-    out: { kind: "stdout", path: "" }
-
-  - id: gauplus
-    label: gauplus
-    cmd: ["gauplus", {kind: arg, name: domain, flag: "-d", mode: value}, {kind: arg, name: output, flag: "-o", mode: value}]
-    args:
-      - { name: domain, type: string, label: "Domain", required: true }
-      - { name: output, type: string, label: "Output file", default: "gauplus.txt" }
-    out: { kind: "list:text", path: "gauplus.txt" }
+      - { name: proxy, type: string, label: "HTTP Proxy (Burp/Zap)" }
+      - { name: output, type: string, label: "Output File", default: "httpx.txt" }
+    out: { kind: "list:text", path: "httpx.txt" }
 
   - id: katana
     label: Katana
-    cmd: ["katana", {kind: arg, name: url, flag: "-u", mode: value}, {kind: arg, name: depth, flag: "-d", mode: value}, {kind: arg, name: output, flag: "-o", mode: value}]
+    description: "Next-gen web crawler"
+    cmd:
+      - "katana"
+      - {kind: arg, name: input_file, flag: "-list", mode: value}
+      - {kind: arg, name: depth, flag: "-d", mode: value}
+      - {kind: arg, name: js_crawl, flag: "-jc", mode: bool}
+      - {kind: arg, name: headless, flag: "-headless", mode: bool}
+      - {kind: arg, name: output, flag: "-o", mode: value}
     args:
-      - { name: url, type: string, label: "URL", default: "{{url}}" }
-      - { name: depth, type: number, label: "Depth", default: 2 }
-      - { name: output, type: string, label: "Output file", default: "katana.txt" }
+      - { name: input_file, type: string, label: "Input URLs", default: "{{input_file}}" }
+      - { name: depth, type: number, label: "Depth", default: 3 }
+      - { name: js_crawl, type: boolean, label: "JS Crawl", default: true }
+      - { name: headless, type: boolean, label: "Headless (Browser)", default: false }
+      - { name: output, type: string, label: "Output File", default: "katana.txt" }
     out: { kind: "list:url", path: "katana.txt" }
 
-  - id: jsfinder
-    label: JSFinder
-    cmd: ["python3","-m","JSFinder", {kind: arg, name: url, flag: "-u", mode: value}, {kind: arg, name: output, flag: "-o", mode: value}]
+  - id: gowitness
+    label: GoWitness
+    description: "Website Screenshot Utility"
+    cmd:
+      - "gowitness"
+      - "file"
+      - {kind: arg, name: input_file, flag: "-f", mode: value}
+      - {kind: arg, name: threads, flag: "--threads", mode: value}
+      - {kind: arg, name: output, flag: "--destination", mode: value}
+    args:
+      - { name: input_file, type: string, label: "Input URLs", default: "{{input_file}}" }
+      - { name: threads, type: number, label: "Threads", default: 4 }
+      - { name: output, type: string, label: "Output Dir", default: "screenshots/" }
+    out: { kind: "dir", path: "screenshots/" }
+
+  - id: waymore
+    label: Waymore
+    description: "Fetch URLs from Wayback Machine + Common Crawl + AlienVault"
+    cmd:
+      - "python3"
+      - "waymore.py"
+      - {kind: arg, name: domain, flag: "-i", mode: value}
+      - {kind: arg, name: mode, flag: "-mode", mode: value}
+      - {kind: arg, name: output, flag: "-oU", mode: value}
+    args:
+      - { name: domain, type: string, label: "Target Domain", required: true }
+      - { name: mode, type: string, label: "Mode (U/R/B)", default: "U" }
+      - { name: output, type: string, label: "Output File", default: "waymore.txt" }
+    out: { kind: "list:url", path: "waymore.txt" }
+
+  # ============================================================================
+  # 🟡 FUZZING: Dirs, Params, API
+  # ============================================================================
+  - id: ffuf
+    label: FFUF
+    description: "Fast Web Fuzzer"
+    cmd:
+      - "ffuf"
+      - "-u"
+      - {kind: arg, name: url, flag: "", mode: value}
+      - "-w"
+      - {kind: arg, name: wordlist, flag: "", mode: value}
+      - {kind: arg, name: recursion, flag: "-recursion", mode: bool}
+      - {kind: arg, name: extension, flag: "-e", mode: value}
+      - {kind: arg, name: match_code, flag: "-mc", mode: value}
+      - {kind: arg, name: filter_size, flag: "-fs", mode: value}
+      - {kind: arg, name: output, flag: "-o", mode: value}
+    args:
+      - { name: url, type: string, label: "URL (use FUZZ)", required: true }
+      - { name: wordlist, type: string, label: "Wordlist", default: "/usr/share/wordlists/dirb/common.txt" }
+      - { name: recursion, type: boolean, label: "Recursive", default: false }
+      - { name: extension, type: string, label: "Extensions", default: ".php,.html,.js" }
+      - { name: match_code, type: string, label: "Match Codes", default: "200,301,302,403" }
+      - { name: filter_size, type: string, label: "Filter Size", default: "0" }
+      - { name: output, type: string, label: "Output File", default: "ffuf.json" }
+    out: { kind: "json", path: "ffuf.json" }
+
+  - id: arjun
+    label: Arjun
+    description: "HTTP Parameter Discovery"
+    cmd:
+      - "arjun"
+      - {kind: arg, name: url, flag: "-u", mode: value}
+      - {kind: arg, name: method, flag: "-m", mode: value}
+      - {kind: arg, name: stable, flag: "--stable", mode: bool}
+      - {kind: arg, name: output, flag: "-o", mode: value}
     args:
       - { name: url, type: string, label: "URL", default: "{{url}}" }
-      - { name: output, type: string, label: "Output file", default: "jsfinder.txt" }
-    out: { kind: "txt", path: "jsfinder.txt" }
+      - { name: method, type: string, label: "Method", default: "GET" }
+      - { name: stable, type: boolean, label: "Stable Mode", default: true }
+      - { name: output, type: string, label: "Output File", default: "params.json" }
+    out: { kind: "json", path: "params.json" }
 
-  - id: paramspider
-    label: ParamSpider
-    cmd: ["paramspider", {kind: arg, name: domain, flag: "--domain", mode: value}, {kind: arg, name: exclude, flag: "-e", mode: join, sep: ","}, {kind: arg, name: output, flag: "-o", mode: value}]
+  - id: kiterunner
+    label: Kiterunner
+    description: "Contextual API Discovery Tool"
+    cmd:
+      - "kr"
+      - "scan"
+      - {kind: arg, name: target, flag: "", mode: value}
+      - {kind: arg, name: wordlist, flag: "-w", mode: value}
+      - {kind: arg, name: output, flag: "-o", mode: value}
     args:
-      - { name: domain, type: string, label: "Domain", required: true }
-      - { name: exclude, type: list<string>, label: "Exclude extensions", default: ["jpg","png","svg","gif","css"] }
-      - { name: output, type: string, label: "Output file", default: "paramspider.txt" }
-    out: { kind: "txt", path: "paramspider.txt" }
+      - { name: target, type: string, label: "Target URL/IP", required: true }
+      - { name: wordlist, type: string, label: "Routes Wordlist", default: "routes-large.kite" }
+      - { name: output, type: string, label: "Output Format", default: "json" }
+    out: { kind: "json", path: "kr_output.json" }
 
-  - id: linkfinder
-    label: LinkFinder
-    cmd: ["python3","-m","linkfinder", {kind: arg, name: input_file, flag: "-i", mode: value}, {kind: arg, name: output, flag: "-o", mode: value}]
-    args:
-      - { name: input_file, type: string, label: "Input JS/URL list", default: "{{input_file}}" }
-      - { name: output, type: string, label: "Output file", default: "linkfinder.html" }
-    out: { kind: "file", path: "linkfinder.html" }
-
+  # ============================================================================
+  # 🟠 VULNERABILITY: Scanners, SQLi, XSS, SSTI
+  # ============================================================================
   - id: nuclei
     label: Nuclei
-    cmd: ["nuclei", {kind: arg, name: input_file, flag: "-l", mode: value}, {kind: arg, name: severity, flag: "-severity", mode: join, sep: ","}, {kind: arg, name: rate_limit, flag: "-rl", mode: value}, {kind: arg, name: templates, flag: "-t", mode: join, sep: ","}, {kind: arg, name: output, flag: "-o", mode: value}]
+    description: "The ultimate vulnerability scanner"
+    cmd:
+      - "nuclei"
+      - {kind: arg, name: input_file, flag: "-l", mode: value}
+      - {kind: arg, name: tags, flag: "-tags", mode: join, sep: ","}
+      - {kind: arg, name: severity, flag: "-s", mode: join, sep: ","}
+      - {kind: arg, name: templates, flag: "-t", mode: join, sep: ","}
+      - {kind: arg, name: exclude_templates, flag: "-et", mode: join, sep: ","}
+      - {kind: arg, name: rate_limit, flag: "-rl", mode: value}
+      - {kind: arg, name: proxy, flag: "-proxy", mode: value}
+      - {kind: arg, name: output, flag: "-o", mode: value}
     args:
-      - { name: input_file, type: string, label: "Input file", default: "{{input_file}}" }
-      - { name: severity, type: list<enum>, label: "Severity", options: ["info","low","medium","high","critical"], default: ["medium","high","critical"] }
-      - { name: rate_limit, type: number, label: "Rate limit", default: 150 }
-      - { name: templates, type: list<string>, label: "Templates" }
-      - { name: output, type: string, label: "Output file", default: "nuclei.txt" }
-    out: { kind: "txt", path: "nuclei.txt" }
+      - { name: input_file, type: string, label: "Input List", default: "{{input_file}}" }
+      - { name: tags, type: list<string>, label: "Tags", default: ["cve","misconfig","panel"] }
+      - { name: severity, type: list<string>, label: "Severity", default: ["low","medium","high","critical"] }
+      - { name: templates, type: list<string>, label: "Specific Templates" }
+      - { name: exclude_templates, type: list<string>, label: "Exclude Templates" }
+      - { name: rate_limit, type: number, label: "Rate Limit", default: 150 }
+      - { name: proxy, type: string, label: "Proxy URL" }
+      - { name: output, type: string, label: "Output File", default: "nuclei_vulns.txt" }
+    out: { kind: "txt", path: "nuclei_vulns.txt" }
+
+  - id: sqlmap
+    label: SQLMap
+    description: "Automated SQL Injection"
+    cmd:
+      - "sqlmap"
+      - {kind: arg, name: url, flag: "-u", mode: value}
+      - "--batch"
+      - "--random-agent"
+      - {kind: arg, name: level, flag: "--level", mode: value}
+      - {kind: arg, name: risk, flag: "--risk", mode: value}
+      - {kind: arg, name: data, flag: "--data", mode: value}
+      - {kind: arg, name: tampered, flag: "--tamper", mode: value}
+      - {kind: arg, name: threads, flag: "--threads", mode: value}
+    args:
+      - { name: url, type: string, label: "Target URL", required: true }
+      - { name: level, type: number, label: "Level (1-5)", default: 1 }
+      - { name: risk, type: number, label: "Risk (1-3)", default: 1 }
+      - { name: data, type: string, label: "POST Data" }
+      - { name: tampered, type: string, label: "Tamper Script" }
+      - { name: threads, type: number, label: "Threads", default: 4 }
+    out: { kind: "dir", path: "/root/.local/share/sqlmap/output" }
 
   - id: dalfox
     label: Dalfox
-    cmd: ["dalfox","file", {kind: arg, name: input_file, flag: "", mode: value}, {kind: arg, name: output, flag: "-o", mode: value}]
+    description: "XSS Scanner & Parameter Analyzer"
+    cmd:
+      - "dalfox"
+      - "file"
+      - {kind: arg, name: input_file, flag: "", mode: value}
+      - {kind: arg, name: blind, flag: "-b", mode: value}
+      - {kind: arg, name: header, flag: "-H", mode: value}
+      - {kind: arg, name: output, flag: "-o", mode: value}
     args:
-      - { name: input_file, type: string, label: "Input file", default: "{{input_file}}" }
-      - { name: output, type: string, label: "Output file", default: "dalfox.txt" }
+      - { name: input_file, type: string, label: "Input URLs", default: "{{input_file}}" }
+      - { name: blind, type: string, label: "Blind XSS Callback" }
+      - { name: header, type: string, label: "Custom Header (Cookie: ...)" }
+      - { name: output, type: string, label: "Output File", default: "dalfox.txt" }
     out: { kind: "txt", path: "dalfox.txt" }
 
-  - id: kxss
-    label: KXSS
-    cmd: ["kxss", {kind: arg, name: input_file, flag: "", mode: value}]
+  - id: commix
+    label: Commix
+    description: "Command Injection Exploiter"
+    cmd:
+      - "python3"
+      - "commix.py"
+      - "--batch"
+      - {kind: arg, name: url, flag: "--url", mode: value}
+      - {kind: arg, name: data, flag: "--data", mode: value}
+      - {kind: arg, name: level, flag: "--level", mode: value}
+    args:
+      - { name: url, type: string, label: "Target URL", required: true }
+      - { name: data, type: string, label: "POST Data" }
+      - { name: level, type: number, label: "Level", default: 1 }
+    out: { kind: "stdout", path: "" }
+
+  # ============================================================================
+  # 🕷️ JAVASCRIPT & SECRETS
+  # ============================================================================
+  - id: trufflehog
+    label: TruffleHog
+    description: "Secret scanner for Git history"
+    cmd:
+      - "trufflehog"
+      - "git"
+      - {kind: arg, name: url, flag: "", mode: value}
+      - {kind: arg, name: json, flag: "--json", mode: bool}
+    args:
+      - { name: url, type: string, label: "Git URL", required: true }
+      - { name: json, type: boolean, label: "JSON Output", default: true }
+    out: { kind: "stdout", path: "" }
+
+  - id: mantra
+    label: Mantra
+    description: "Secret harvesting from API endpoints/JS"
+    cmd:
+      - "mantra"
+      - {kind: arg, name: url, flag: "-u", mode: value}
+      - {kind: arg, name: input_file, flag: "-l", mode: value}
+      - {kind: arg, name: output, flag: "-o", mode: value}
+    args:
+      - { name: url, type: string, label: "Single URL" }
+      - { name: input_file, type: string, label: "URL List", default: "{{input_file}}" }
+      - { name: output, type: string, label: "Output File", default: "mantra.txt" }
+    out: { kind: "txt", path: "mantra.txt" }
+
+  - id: subjs
+    label: SubJS
+    description: "Extract JS file links from a list of URLs"
+    cmd:
+      - "subjs"
+      - "-i"
+      - {kind: arg, name: input_file, flag: "", mode: value}
     args:
       - { name: input_file, type: string, label: "Input URLs", default: "{{input_file}}" }
     out: { kind: "stdout", path: "" }
 
-  - id: xsstrike
-    label: XSStrike
-    cmd: ["xsstrike", {kind: arg, name: url, flag: "-u", mode: value}, {kind: arg, name: crawl, flag: "--crawl", mode: bool}, {kind: arg, name: blind, flag: "--blind", mode: bool}, {kind: arg, name: output, flag: "-o", mode: value}]
+  # ============================================================================
+  # ☁️ CLOUD & INFRASTRUCTURE
+  # ============================================================================
+  - id: trivy_fs
+    label: Trivy FS
+    description: "Container/Filesystem Vulnerability Scanner"
+    cmd:
+      - "trivy"
+      - "fs"
+      - {kind: arg, name: path, flag: "", mode: value}
+      - {kind: arg, name: severity, flag: "--severity", mode: value}
+      - {kind: arg, name: output, flag: "-o", mode: value}
     args:
-      - { name: url, type: string, label: "URL", default: "{{url}}" }
-      - { name: crawl, type: boolean, label: "Crawl", default: false }
-      - { name: blind, type: boolean, label: "Blind", default: false }
-      - { name: output, type: string, label: "Output file", default: "xsstrike.txt" }
-    out: { kind: "txt", path: "xsstrike.txt" }
+      - { name: path, type: string, label: "Target Path", default: "." }
+      - { name: severity, type: string, label: "Severity", default: "HIGH,CRITICAL" }
+      - { name: output, type: string, label: "Output File", default: "trivy.json" }
+    out: { kind: "json", path: "trivy.json" }
 
-  - id: jaeles
-    label: Jaeles
-    cmd: ["jaeles","scan", {kind: arg, name: input_file, flag: "-uL", mode: value}, {kind: arg, name: signatures, flag: "-s", mode: join, sep: ","}, {kind: arg, name: output, flag: "-o", mode: value}]
+  - id: cloud_enum
+    label: Cloud Enum
+    description: "Enumerate public cloud resources (AWS/Azure/GCP)"
+    cmd:
+      - "cloud_enum"
+      - {kind: arg, name: keyword, flag: "-k", mode: value}
+      - {kind: arg, name: mutations, flag: "-m", mode: value}
     args:
-      - { name: input_file, type: string, label: "URL list", default: "{{input_file}}" }
-      - { name: signatures, type: list<string>, label: "Signatures" }
-      - { name: output, type: string, label: "Output dir", default: "jaeles_out" }
-    out: { kind: "dir", path: "jaeles_out" }
+      - { name: keyword, type: string, label: "Keyword/Brand", required: true }
+      - { name: mutations, type: string, label: "Mutations File" }
+    out: { kind: "stdout", path: "" }
 
-  - id: gowitness
-    label: GoWitness
-    cmd: ["gowitness","file", {kind: arg, name: input_file, flag: "-f", mode: value}, {kind: arg, name: output, flag: "-o", mode: value}]
+  # ============================================================================
+  # 📱 MOBILE SECURITY
+  # ============================================================================
+  - id: mobsf_scan
+    label: MobSF Scan
+    description: "Upload to MobSF (requires API URL)"
+    cmd:
+      - "curl"
+      - "-F"
+      - "file=@{{input_file}}"
+      - "{{mobsf_url}}/api/v1/upload"
+      - "-H"
+      - "Authorization: {{api_key}}"
     args:
-      - { name: input_file, type: string, label: "Input file", default: "{{input_file}}" }
-      - { name: output, type: string, label: "Output dir", default: "gowitness" }
-    out: { kind: "dir", path: "gowitness" }
+      - { name: input_file, type: string, label: "APK/IPA File", required: true }
+      - { name: mobsf_url, type: string, label: "MobSF URL", default: "http://localhost:8000" }
+      - { name: api_key, type: string, label: "API Key", required: true }
+    out: { kind: "json", path: "mobsf_upload.json" }
 
-  - id: aquatone
-    label: Aquatone
-    cmd: ["aquatone", {kind: arg, name: input_file, flag: "-list", mode: value}, {kind: arg, name: out, flag: "-out", mode: value}]
+  - id: apktool
+    label: Apktool
+    description: "Reverse engineer Android APKs"
+    cmd:
+      - "apktool"
+      - "d"
+      - {kind: arg, name: file, flag: "", mode: value}
+      - {kind: arg, name: output, flag: "-o", mode: value}
     args:
-      - { name: input_file, type: string, label: "Input file", default: "{{input_file}}" }
-      - { name: out, type: string, label: "Output dir", default: "aquatone" }
-    out: { kind: "dir", path: "aquatone" }
+      - { name: file, type: string, label: "APK File", required: true }
+      - { name: output, type: string, label: "Output Dir", default: "apk_decompiled" }
+    out: { kind: "dir", path: "apk_decompiled" }
 
-  - id: sublist3r
-    label: Sublist3r
-    cmd: ["sublist3r", {kind: arg, name: domain, flag: "-d", mode: value}, {kind: arg, name: threads, flag: "-t", mode: value}, {kind: arg, name: output, flag: "-o", mode: value}]
+  # ============================================================================
+  # 🛠 UTILITIES: Filtering & Logic
+  # ============================================================================
+  - id: anew
+    label: Anew
+    description: "Append unique lines only (The Glue)"
+    cmd:
+      - "anew"
+      - {kind: arg, name: file, flag: "", mode: value}
     args:
-      - { name: domain, type: string, label: "Domain", required: true }
-      - { name: threads, type: number, label: "Threads", default: 20 }
-      - { name: output, type: string, label: "Output file", default: "sublist3r.txt" }
-    out: { kind: "list:text", path: "sublist3r.txt" }
+      - { name: file, type: string, label: "File to append to", required: true }
+    out: { kind: "stdout", path: "" }
 
-  - id: arjun
-    label: Arjun
-    cmd: ["arjun", {kind: arg, name: url, flag: "-u", mode: value}, {kind: arg, name: output, flag: "-o", mode: value}]
+  - id: unfurl
+    label: Unfurl
+    description: "Extract domains/paths/keys from URLs"
+    cmd:
+      - "unfurl"
+      - {kind: arg, name: mode, flag: "", mode: value}
     args:
-      - { name: url, type: string, label: "URL", default: "{{url}}" }
-      - { name: output, type: string, label: "Output file", default: "arjun.json" }
-    out: { kind: "file", path: "arjun.json" }
+      - { name: mode, type: string, label: "Mode (domains/paths/keys)", default: "domains" }
+    out: { kind: "stdout", path: "" }
 
-  - id: cariddi
-    label: Cariddi
-    cmd: ["cariddi", {kind: arg, name: input_file, flag: "-list", mode: value}, {kind: arg, name: output, flag: "-o", mode: value}]
+  - id: notify
+    label: Notify
+    description: "Send alerts to Discord/Slack"
+    cmd:
+      - "notify"
+      - {kind: arg, name: data, flag: "-data", mode: value}
+      - {kind: arg, name: config, flag: "-config", mode: value}
     args:
-      - { name: input_file, type: string, label: "URL list", default: "{{input_file}}" }
-      - { name: output, type: string, label: "Output file", default: "cariddi.txt" }
-    out: { kind: "txt", path: "cariddi.txt" }
+      - { name: data, type: string, label: "Message/File", default: "Scan Finished" }
+      - { name: config, type: string, label: "Provider Config" }
+    out: { kind: "stdout", path: "" }
+
