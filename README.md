@@ -19,13 +19,16 @@ Run our new all-in-one installer. It sets up the environment, installs dependenc
 ```bash
 chmod +x install.sh
 ./install.sh
-
+```
 2. Start the Platform
 Once installed, you can launch the full stack (Frontend + Backend + API) with a single command:
+```bash
 ./start_hackatomiq.sh
+```
 
  * Frontend: http://localhost:5173
  * Backend API: http://localhost:5000
+
 🤖 AI Integration (MCP)
 HackAtomIQical now supports the Model Context Protocol. This bridges the gap between your LLM and your tools.
 Setup for Claude Desktop
