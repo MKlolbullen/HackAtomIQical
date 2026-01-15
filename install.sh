@@ -113,13 +113,14 @@ check_requirements() {
 install_frontend() {
     log_info "Installing frontend dependencies..."
 
+    # Logic to find the frontend directory
     if [ -d "bug-bounty-platform" ]; then
         cd bug-bounty-platform
     elif [ -d "frontend" ]; then
         cd frontend
     else
-        log_error "Frontend directory not found"
-        exit 1
+        log_warning "Frontend directory not found (skipping frontend install)"
+        return
     fi
 
     case $PACKAGE_MANAGER in
@@ -142,13 +143,14 @@ install_frontend() {
 install_backend() {
     log_info "Installing backend dependencies..."
 
+    # Logic to find the backend directory
     if [ -d "bug-bounty-backend" ]; then
         cd bug-bounty-backend
     elif [ -d "backend" ]; then
         cd backend
     else
-        log_error "Backend directory not found"
-        exit 1
+        # If no dedicated backend folder, assume root is backend for the MCP scripts
+        log_warning "Dedicated backend directory not found. Using root for Python environment."
     fi
 
     # Create virtual environment if it doesn't exist
@@ -164,15 +166,25 @@ install_backend() {
     pip install --upgrade pip
 
     # Install requirements
+    # Checks current directory (if inside backend folder) or root (if we stayed in root)
     if [ -f "requirements.txt" ]; then
+        log_info "Installing from requirements.txt..."
         pip install -r requirements.txt
+    elif [ -f "../requirements.txt" ]; then
+        # Fallback if requirements are in root but we are in backend folder
+        log_info "Found requirements.txt in parent directory..."
+        pip install -r ../requirements.txt
     else
-        log_error "requirements.txt not found"
+        log_error "requirements.txt not found. Please ensure it exists."
         exit 1
     fi
 
     log_success "Backend dependencies installed"
-    cd ..
+    
+    # Return to project root if we entered a subdirectory
+    if [ -d "bug-bounty-backend" ] || [ -d "backend" ]; then
+        cd ..
+    fi
 }
 
 # Install security tools
@@ -212,7 +224,7 @@ install_security_tools() {
 
     # Install Python tools
     log_info "Installing Python-based security tools..."
-    pip3 install --user arjun sqlmap xsrfprobe
+    pip3 install --user arjun sqlmap xsrfprobe || log_warning "Some python tools failed to install to user path"
 
     log_success "Security tools installation completed"
 }
@@ -224,16 +236,36 @@ create_startup_scripts() {
     # Frontend startup script
     cat > start_frontend.sh << 'EOF'
 #!/bin/bash
-cd bug-bounty-platform || cd frontend
+if [ -d "bug-bounty-platform" ]; then
+    cd bug-bounty-platform
+elif [ -d "frontend" ]; then
+    cd frontend
+fi
 npm run dev
 EOF
 
-    # Backend startup script
+    # Backend startup script (Adjusted for MCP/FastAPI)
     cat > start_backend.sh << 'EOF'
 #!/bin/bash
-cd bug-bounty-backend || cd backend
-source venv/bin/activate
-python src/main.py
+if [ -d "bug-bounty-backend" ]; then
+    cd bug-bounty-backend
+elif [ -d "backend" ]; then
+    cd backend
+fi
+
+if [ -d "venv" ]; then
+    source venv/bin/activate
+fi
+
+# Determine entry point: standard main.py or the MCP server
+if [ -f "src/main.py" ]; then
+    python src/main.py
+elif [ -f "mcp_server.py" ]; then
+    echo "Starting MCP Server..."
+    python mcp_server.py
+else
+    echo "Error: Could not find main.py or mcp_server.py"
+fi
 EOF
 
     # Combined startup script
@@ -245,9 +277,7 @@ echo "Starting HackAtomIQ Platform..."
 
 # Start backend in background
 echo "Starting backend..."
-cd bug-bounty-backend || cd backend
-source venv/bin/activate
-python src/main.py &
+./start_backend.sh &
 BACKEND_PID=$!
 
 # Wait for backend to start
@@ -255,8 +285,7 @@ sleep 5
 
 # Start frontend
 echo "Starting frontend..."
-cd ../bug-bounty-platform || cd ../frontend
-npm run dev &
+./start_frontend.sh &
 FRONTEND_PID=$!
 
 echo "HackAtomIQ is starting up..."
@@ -336,7 +365,7 @@ main() {
     echo
     echo -e "${CYAN}Documentation:${NC}"
     echo "• README.md - Complete documentation"
-    echo "• API docs: http://localhost:5000/api/health"
+    echo "• API docs: http://localhost:5000/docs"
     echo
     echo -e "${YELLOW}Happy Bug Hunting! 🎯${NC}"
 }
