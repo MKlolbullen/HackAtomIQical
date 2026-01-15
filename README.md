@@ -22,7 +22,7 @@ chmod +x install.sh
 ```
 2. Start the Platform
 Once installed, you can launch the full stack (Frontend + Backend + API) with a single command:
-``°bash
+```bash
 ./start_hackatomiq.sh
 ```
  * Frontend: http://localhost:5173
