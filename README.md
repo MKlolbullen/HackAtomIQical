@@ -97,6 +97,8 @@ What can the AI do?
 ​Reporting: Report Generator, PDF Export, JSON Export, CSV Export
 ​Notification: Slack, Discord, Email, Webhook, SMS
 ​</details>
+​<details>
+<summary><strong>
 ​📚 Professional Workflow Templates
 ​🟢 Basic Web Application Scan (Beginner, 30 min)
 ​Subfinder → HTTPx → Nuclei → Output
@@ -134,6 +136,8 @@ What can the AI do?
 ​💉 SQL Injection Testing Workflow (Advanced, 35 min)
 ​Specialized SQL injection detection
 ​Parameter discovery and exploitation
+​</details>
+</summary></strong>
 
 🐳 Docker Deployment
 
