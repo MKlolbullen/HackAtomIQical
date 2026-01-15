@@ -56,7 +56,7 @@ command_exists() {
 # Check system requirements
 check_requirements() {
     log_info "Checking system requirements..."
-    
+
     # Check OS
     if [[ "$OSTYPE" == "linux-gnu"* ]]; then
         log_success "Linux detected"
@@ -66,7 +66,7 @@ check_requirements() {
         log_error "Unsupported operating system: $OSTYPE"
         exit 1
     fi
-    
+
     # Check Node.js
     if command_exists node; then
         NODE_VERSION=$(node --version | cut -d'v' -f2)
@@ -75,7 +75,7 @@ check_requirements() {
         log_error "Node.js not found. Please install Node.js 18+ from https://nodejs.org/"
         exit 1
     fi
-    
+
     # Check Python
     if command_exists python3; then
         PYTHON_VERSION=$(python3 --version | cut -d' ' -f2)
@@ -84,7 +84,7 @@ check_requirements() {
         log_error "Python 3 not found. Please install Python 3.8+ from https://python.org/"
         exit 1
     fi
-    
+
     # Check pip
     if command_exists pip3; then
         log_success "pip3 found"
@@ -92,7 +92,7 @@ check_requirements() {
         log_error "pip3 not found. Please install pip3"
         exit 1
     fi
-    
+
     # Check package manager
     if command_exists npm; then
         log_success "npm found"
@@ -112,7 +112,7 @@ check_requirements() {
 # Install frontend dependencies
 install_frontend() {
     log_info "Installing frontend dependencies..."
-    
+
     if [ -d "bug-bounty-platform" ]; then
         cd bug-bounty-platform
     elif [ -d "frontend" ]; then
@@ -121,7 +121,7 @@ install_frontend() {
         log_error "Frontend directory not found"
         exit 1
     fi
-    
+
     case $PACKAGE_MANAGER in
         "npm")
             npm install
@@ -133,7 +133,7 @@ install_frontend() {
             yarn install
             ;;
     esac
-    
+
     log_success "Frontend dependencies installed"
     cd ..
 }
@@ -141,7 +141,7 @@ install_frontend() {
 # Install backend dependencies
 install_backend() {
     log_info "Installing backend dependencies..."
-    
+
     if [ -d "bug-bounty-backend" ]; then
         cd bug-bounty-backend
     elif [ -d "backend" ]; then
@@ -150,19 +150,19 @@ install_backend() {
         log_error "Backend directory not found"
         exit 1
     fi
-    
+
     # Create virtual environment if it doesn't exist
     if [ ! -d "venv" ]; then
         log_info "Creating Python virtual environment..."
         python3 -m venv venv
     fi
-    
+
     # Activate virtual environment
     source venv/bin/activate
-    
+
     # Upgrade pip
     pip install --upgrade pip
-    
+
     # Install requirements
     if [ -f "requirements.txt" ]; then
         pip install -r requirements.txt
@@ -170,7 +170,7 @@ install_backend() {
         log_error "requirements.txt not found"
         exit 1
     fi
-    
+
     log_success "Backend dependencies installed"
     cd ..
 }
@@ -178,18 +178,18 @@ install_backend() {
 # Install security tools
 install_security_tools() {
     log_info "Installing security tools..."
-    
+
     # Check if running on Kali Linux
     if [ -f "/etc/os-release" ] && grep -q "kali" /etc/os-release; then
         log_info "Kali Linux detected - most tools should already be available"
     else
         log_warning "Not running on Kali Linux - some tools may need manual installation"
     fi
-    
+
     # Install Go tools if Go is available
     if command_exists go; then
         log_info "Installing Go-based security tools..."
-        
+
         # ProjectDiscovery tools
         go install -v github.com/projectdiscovery/subfinder/v2/cmd/subfinder@latest
         go install -v github.com/projectdiscovery/httpx/cmd/httpx@latest
@@ -197,37 +197,37 @@ install_security_tools() {
         go install -v github.com/projectdiscovery/naabu/v2/cmd/naabu@latest
         go install -v github.com/projectdiscovery/katana/cmd/katana@latest
         go install -v github.com/projectdiscovery/dnsx/cmd/dnsx@latest
-        
+
         # Other Go tools
         go install github.com/hakluke/hakrawler@latest
         go install github.com/edoardottt/cariddi/cmd/cariddi@latest
         go install github.com/lc/gau/v2/cmd/gau@latest
         go install github.com/tomnomnom/waybackurls@latest
         go install github.com/ffuf/ffuf@latest
-        
+
         log_success "Go-based tools installed"
     else
         log_warning "Go not found - skipping Go-based tool installation"
     fi
-    
+
     # Install Python tools
     log_info "Installing Python-based security tools..."
     pip3 install --user arjun sqlmap xsrfprobe
-    
+
     log_success "Security tools installation completed"
 }
 
 # Create startup scripts
 create_startup_scripts() {
     log_info "Creating startup scripts..."
-    
+
     # Frontend startup script
     cat > start_frontend.sh << 'EOF'
 #!/bin/bash
 cd bug-bounty-platform || cd frontend
 npm run dev
 EOF
-    
+
     # Backend startup script
     cat > start_backend.sh << 'EOF'
 #!/bin/bash
@@ -235,7 +235,7 @@ cd bug-bounty-backend || cd backend
 source venv/bin/activate
 python src/main.py
 EOF
-    
+
     # Combined startup script
     cat > start_hackatomiq.sh << 'EOF'
 #!/bin/bash
@@ -269,9 +269,9 @@ echo "Press Ctrl+C to stop all services"
 trap 'kill $BACKEND_PID $FRONTEND_PID; exit' INT
 wait
 EOF
-    
+
     chmod +x start_frontend.sh start_backend.sh start_hackatomiq.sh
-    
+
     log_success "Startup scripts created"
 }
 
@@ -279,7 +279,7 @@ EOF
 create_desktop_shortcut() {
     if [[ "$OSTYPE" == "linux-gnu"* ]] && [ -d "$HOME/Desktop" ]; then
         log_info "Creating desktop shortcut..."
-        
+
         cat > "$HOME/Desktop/HackAtomIQ.desktop" << EOF
 [Desktop Entry]
 Version=1.0
@@ -291,7 +291,7 @@ Icon=security
 Terminal=true
 Categories=Security;Development;
 EOF
-        
+
         chmod +x "$HOME/Desktop/HackAtomIQ.desktop"
         log_success "Desktop shortcut created"
     fi
@@ -300,10 +300,10 @@ EOF
 # Main installation function
 main() {
     print_banner
-    
+
     log_info "Starting HackAtomIQ installation..."
     log_info "This will install the complete bug bounty platform with 150+ security tools"
-    
+
     # Ask for confirmation
     read -p "Do you want to continue? (y/N): " -n 1 -r
     echo
@@ -311,7 +311,7 @@ main() {
         log_info "Installation cancelled"
         exit 0
     fi
-    
+
     # Run installation steps
     check_requirements
     install_frontend
@@ -319,7 +319,7 @@ main() {
     install_security_tools
     create_startup_scripts
     create_desktop_shortcut
-    
+
     # Final success message
     echo
     log_success "🎉 HackAtomIQ installation completed successfully!"
@@ -343,4 +343,3 @@ main() {
 
 # Run main function
 main "$@"
-
