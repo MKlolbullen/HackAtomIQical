@@ -2,7 +2,10 @@
 fastapi>=0.109.0
 uvicorn[standard]>=0.27.0
 python-multipart>=0.0.9
-flask-cors>=4.0.0        # Handles CORS between Frontend (5173) and Backend (5000)
+flask-cors>=4.0.0
+sqlalchemy>=2.0.0
+python-dotenv>=1.0.0
+pyyaml>=6.0
 
 # --- MCP Protocol Support ---
 mcp>=1.0.0
